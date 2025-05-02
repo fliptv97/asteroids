@@ -1,4 +1,5 @@
 import pygame
+import sys
 
 from constants import *
 from player import Player
@@ -21,7 +22,7 @@ def main():
   clock = pygame.time.Clock()
   dt = 0
 
-  Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+  player = Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
   AsteroidField()
 
   while True:
@@ -30,6 +31,12 @@ def main():
         return
 
     updatable.update(dt)
+
+    for asteroid in asteroids:
+      if asteroid.colliding(player):
+        print("Game over!")
+
+        sys.exit(1)
 
     screen.fill("black")
     for d in drawable:
