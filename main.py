@@ -55,6 +55,7 @@ def main():
   player = None
   game_over = False
   explosion = None
+  paused = False
 
   def spawn_player():
     return Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
@@ -74,24 +75,28 @@ def main():
       if event.type == pygame.QUIT:
         return
       
-      # Handle game over input
-      if game_over and event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_r:  # Retry
-          # Reset game state
-          lives = PLAYER_LIVES
-          respawn_timer = 0
-          player = spawn_player()
-          game_over = False
-          explosion = None
-          # Clear all existing objects
-          for asteroid in asteroids:
-            asteroid.kill()
-          for shot in shots:
-            shot.kill()
-        elif event.key == pygame.K_q:  # Quit
-          return
+      # Handle keyboard input
+      if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_ESCAPE and not game_over:
+          paused = not paused  # Toggle pause
+        elif game_over:
+          if event.key == pygame.K_r:  # Retry
+            # Reset game state
+            lives = PLAYER_LIVES
+            respawn_timer = 0
+            player = spawn_player()
+            game_over = False
+            explosion = None
+            paused = False
+            # Clear all existing objects
+            for asteroid in asteroids:
+              asteroid.kill()
+            for shot in shots:
+              shot.kill()
+          elif event.key == pygame.K_q:  # Quit
+            return
 
-    if not game_over:
+    if not game_over and not paused:
       updatable.update(dt)
 
       if player and respawn_timer <= 0 and not explosion:
@@ -158,6 +163,16 @@ def main():
       draw_heart(screen, 10, 15, 24)
       lives_text = font.render(f"x{lives}", True, "white")
       screen.blit(lives_text, (40, 10))
+    
+    # Draw pause screen
+    if paused and not game_over:
+      pause_text = font.render("PAUSED", True, "white")
+      pause_rect = pause_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 20))
+      screen.blit(pause_text, pause_rect)
+      
+      resume_text = font.render("Press ESC to Resume", True, "white")
+      resume_rect = resume_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 20))
+      screen.blit(resume_text, resume_rect)
     
     if game_over:
       game_over_text = font.render("GAME OVER", True, "white")
