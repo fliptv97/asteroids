@@ -56,6 +56,8 @@ def main():
   game_over = False
   explosion = None
   paused = False
+  score = 0
+  score_animations = []
 
   def spawn_player():
     return Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
@@ -66,6 +68,30 @@ def main():
       asteroid.kill()
     for shot in shots:
       shot.kill()
+  
+  class ScoreAnimation:
+    def __init__(self, text, x, y):
+      self.text = text
+      self.x = x
+      self.y = y
+      self.start_y = y
+      self.lifetime = 1.0
+      self.max_lifetime = 1.0
+    
+    def update(self, dt):
+      self.lifetime -= dt
+      self.y -= 50 * dt  # Move up
+      return self.lifetime > 0
+    
+    def draw(self, screen, font):
+      if self.lifetime > 0:
+        alpha = self.lifetime / self.max_lifetime
+        color_value = max(0, min(255, int(255 * alpha)))
+        color = (color_value, color_value, color_value)
+        
+        # Create surface with per-pixel alpha
+        text_surface = font.render(self.text, True, color)
+        screen.blit(text_surface, (self.x, self.y))
 
   player = spawn_player()
   AsteroidField()
@@ -88,6 +114,8 @@ def main():
             game_over = False
             explosion = None
             paused = False
+            score = 0
+            score_animations = []
             # Clear all existing objects
             for asteroid in asteroids:
               asteroid.kill()
@@ -98,6 +126,9 @@ def main():
 
     if not game_over and not paused:
       updatable.update(dt)
+      
+      # Update score animations
+      score_animations = [anim for anim in score_animations if anim.update(dt)]
 
       if player and respawn_timer <= 0 and not explosion:
         for asteroid in asteroids:
@@ -138,8 +169,19 @@ def main():
       for asteroid in asteroids:
         for shot in shots:
           if asteroid.colliding_with(shot):
+            # Get score position for animation
+            score_rect = font.render(f"{score:06d}", True, "white").get_rect()
+            score_rect.topright = (SCREEN_WIDTH - 10, 10)
+            
             asteroid.split()
             shot.kill()
+            # Increase score
+            score += 100
+            if score > 999999:
+              score = 999999
+            
+            # Add score animation
+            score_animations.append(ScoreAnimation("+100", score_rect.right - 60, score_rect.bottom + 5))
 
     screen.fill("black")
     
@@ -163,6 +205,16 @@ def main():
       draw_heart(screen, 10, 15, 24)
       lives_text = font.render(f"x{lives}", True, "white")
       screen.blit(lives_text, (40, 10))
+      
+      # Draw score animations first (behind score)
+      for anim in score_animations:
+        anim.draw(screen, font)
+      
+      # Draw score in upper-right corner (on top)
+      score_text = font.render(f"{score:06d}", True, "white")
+      score_rect = score_text.get_rect()
+      score_rect.topright = (SCREEN_WIDTH - 10, 10)
+      screen.blit(score_text, score_rect)
     
     # Draw pause screen
     if paused and not game_over:
