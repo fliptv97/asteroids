@@ -230,7 +230,7 @@ class PlayingState(GameState):
         screen.blit(lives_text, (40, 10))
         
         # Draw score
-        score_text = self.game_objects['font'].render(f"Score: {self.game_objects['score']}", True, "white")
+        score_text = self.game_objects['font'].render(f"{self.game_objects['score']:06d}", True, "white")
         score_rect = score_text.get_rect()
         score_rect.topright = (SCREEN_WIDTH - 10, 10)
         screen.blit(score_text, score_rect)
@@ -302,7 +302,7 @@ class GameOverState(GameState):
         screen.blit(game_over_text, text_rect)
         
         # Draw final score
-        final_score_text = self.game_objects['font'].render(f"Final Score: {self.game_objects['score']}", True, "white")
+        final_score_text = self.game_objects['font'].render(f"Final Score: {self.game_objects['score']:06d}", True, "white")
         score_rect = final_score_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
         screen.blit(final_score_text, score_rect)
         
