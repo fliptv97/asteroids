@@ -45,6 +45,9 @@ class Player(CircleShape):
         self.rotation_velocity *= PLAYER_TURN_DRAG
         self.position += self.velocity * dt
         self.rotation += self.rotation_velocity * dt
+        
+        # Wrap around screen edges
+        self.wrap_screen()
 
     def rotate_accelerate(self, dt):
         rotation_accel = PLAYER_TURN_ACCELERATION * dt

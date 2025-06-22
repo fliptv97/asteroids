@@ -1,5 +1,4 @@
 - Add acceleration to the player movement
-- Make the objects wrap around the screen instead of disappearing
 - Add a background image
 - Create different weapon types
 - Make the ship have a triangular hit box instead of a circular one
