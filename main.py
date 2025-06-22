@@ -14,6 +14,7 @@ def main():
   pygame.init()
   screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
   font = pygame.font.Font("medodica/MedodicaRegular.otf", 36)
+  title_font = pygame.font.Font("medodica/MedodicaRegular.otf", 72)
   
   def draw_heart(surface, x, y, size=16):
     # Draw a simple pixel-art heart
@@ -53,7 +54,7 @@ def main():
   lives = PLAYER_LIVES
   respawn_timer = 0
   player = None
-  game_over = False
+  game_state = GAME_STATE_START
   explosion = None
   paused = False
   score = 0
@@ -93,9 +94,22 @@ def main():
         # Create surface with per-pixel alpha
         text_surface = font.render(self.text, True, color)
         screen.blit(text_surface, (self.x, self.y))
-
-  player = spawn_player()
-  AsteroidField()
+  
+  def draw_start_screen():
+    # Draw title
+    title_text = title_font.render("ASTEROIDS", True, "white")
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 100))
+    screen.blit(title_text, title_rect)
+    
+    # Draw start option
+    start_text = font.render("Press SPACE to Start", True, "white")
+    start_rect = start_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
+    screen.blit(start_text, start_rect)
+    
+    # Draw quit option
+    quit_text = font.render("Press Q to Quit", True, "white")
+    quit_rect = quit_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 60))
+    screen.blit(quit_text, quit_rect)
 
   while True:
     for event in pygame.event.get():
@@ -104,15 +118,35 @@ def main():
       
       # Handle keyboard input
       if event.type == pygame.KEYDOWN:
-        if event.key == pygame.K_ESCAPE and not game_over:
-          paused = not paused  # Toggle pause
-        elif game_over:
-          if event.key == pygame.K_r:  # Retry
-            # Reset game state
+        if game_state == GAME_STATE_START:
+          if event.key == pygame.K_SPACE:  # Start game
+            game_state = GAME_STATE_PLAYING
             lives = PLAYER_LIVES
             respawn_timer = 0
             player = spawn_player()
-            game_over = False
+            explosion = None
+            paused = False
+            score = 0
+            score_animations = []
+            asteroid_explosions = []
+            # Clear any existing objects
+            for asteroid in asteroids:
+              asteroid.kill()
+            for shot in shots:
+              shot.kill()
+            # Create asteroid field
+            AsteroidField()
+          elif event.key == pygame.K_q:  # Quit
+            return
+        elif game_state == GAME_STATE_PLAYING:
+          if event.key == pygame.K_ESCAPE:
+            paused = not paused  # Toggle pause
+        elif game_state == GAME_STATE_GAME_OVER:
+          if event.key == pygame.K_r:  # Retry
+            game_state = GAME_STATE_PLAYING
+            lives = PLAYER_LIVES
+            respawn_timer = 0
+            player = spawn_player()
             explosion = None
             paused = False
             score = 0
@@ -123,10 +157,12 @@ def main():
               asteroid.kill()
             for shot in shots:
               shot.kill()
+            # Create asteroid field
+            AsteroidField()
           elif event.key == pygame.K_q:  # Quit
             return
 
-    if not game_over and not paused:
+    if game_state == GAME_STATE_PLAYING and not paused:
       updatable.update(dt)
       
       # Update score animations
@@ -164,11 +200,11 @@ def main():
           explosion = None
           # Check if game should end after explosion finishes
           if lives <= 0:
-            game_over = True
+            game_state = GAME_STATE_GAME_OVER
 
       if respawn_timer > 0:
         respawn_timer -= dt
-        if respawn_timer <= 0 and not game_over and not explosion:
+        if respawn_timer <= 0 and game_state == GAME_STATE_PLAYING and not explosion:
           player = spawn_player()
 
       for asteroid in asteroids:
@@ -193,27 +229,22 @@ def main():
 
     screen.fill("black")
     
-    if not game_over:
+    if game_state == GAME_STATE_START:
+      draw_start_screen()
+    elif game_state == GAME_STATE_PLAYING:
+      # Draw game objects
       for d in drawable:
-        # Don't draw player on game over (extra safety check)
-        if not (game_over and hasattr(d, 'rotation')):
-          d.draw(screen)
-    else:
-      # On game over, only draw non-player objects (asteroids, shots)
-      for d in drawable:
-        if not hasattr(d, 'rotation'):  # Player has rotation attribute
-          d.draw(screen)
-    
-    # Draw explosion if active
-    if explosion:
-      explosion.draw(screen)
-    
-    # Draw asteroid explosions
-    for asteroid_explosion in asteroid_explosions:
-      asteroid_explosion.draw(screen)
-    
-    # Draw heart icon and lives count (only if not game over)
-    if not game_over:
+        d.draw(screen)
+      
+      # Draw explosion if active
+      if explosion:
+        explosion.draw(screen)
+      
+      # Draw asteroid explosions
+      for asteroid_explosion in asteroid_explosions:
+        asteroid_explosion.draw(screen)
+      
+      # Draw heart icon and lives count
       draw_heart(screen, 10, 15, 24)
       lives_text = font.render(f"x{lives}", True, "white")
       screen.blit(lives_text, (40, 10))
@@ -227,9 +258,22 @@ def main():
       score_rect = score_text.get_rect()
       score_rect.topright = (SCREEN_WIDTH - 10, 10)
       screen.blit(score_text, score_rect)
+    elif game_state == GAME_STATE_GAME_OVER:
+      # Draw remaining game objects without player
+      for d in drawable:
+        if not hasattr(d, 'rotation'):  # Player has rotation attribute
+          d.draw(screen)
+      
+      # Draw explosion if active
+      if explosion:
+        explosion.draw(screen)
+      
+      # Draw asteroid explosions
+      for asteroid_explosion in asteroid_explosions:
+        asteroid_explosion.draw(screen)
     
     # Draw pause screen
-    if paused and not game_over:
+    if paused and game_state == GAME_STATE_PLAYING:
       pause_text = font.render("PAUSED", True, "white")
       pause_rect = pause_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 20))
       screen.blit(pause_text, pause_rect)
@@ -238,7 +282,7 @@ def main():
       resume_rect = resume_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 20))
       screen.blit(resume_text, resume_rect)
     
-    if game_over:
+    if game_state == GAME_STATE_GAME_OVER:
       game_over_text = font.render("GAME OVER", True, "white")
       text_rect = game_over_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 40))
       screen.blit(game_over_text, text_rect)
