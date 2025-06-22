@@ -7,7 +7,7 @@ from player import Player
 from asteroid import Asteroid
 from asteroidfield import AsteroidField
 from shot import Shot
-from explosion import PlayerExplosion
+from explosion import PlayerExplosion, AsteroidExplosion
 
 
 def main():
@@ -58,6 +58,7 @@ def main():
   paused = False
   score = 0
   score_animations = []
+  asteroid_explosions = []
 
   def spawn_player():
     return Player(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
@@ -116,6 +117,7 @@ def main():
             paused = False
             score = 0
             score_animations = []
+            asteroid_explosions = []
             # Clear all existing objects
             for asteroid in asteroids:
               asteroid.kill()
@@ -129,6 +131,9 @@ def main():
       
       # Update score animations
       score_animations = [anim for anim in score_animations if anim.update(dt)]
+      
+      # Update asteroid explosions
+      asteroid_explosions = [exp for exp in asteroid_explosions if exp.update(dt)]
 
       if player and respawn_timer <= 0 and not explosion:
         for asteroid in asteroids:
@@ -173,6 +178,9 @@ def main():
             score_rect = font.render(f"{score:06d}", True, "white").get_rect()
             score_rect.topright = (SCREEN_WIDTH - 10, 10)
             
+            # Create explosion at asteroid position
+            asteroid_explosions.append(AsteroidExplosion(asteroid.position.x, asteroid.position.y, asteroid.radius))
+            
             asteroid.split()
             shot.kill()
             # Increase score
@@ -199,6 +207,10 @@ def main():
     # Draw explosion if active
     if explosion:
       explosion.draw(screen)
+    
+    # Draw asteroid explosions
+    for asteroid_explosion in asteroid_explosions:
+      asteroid_explosion.draw(screen)
     
     # Draw heart icon and lives count (only if not game over)
     if not game_over:

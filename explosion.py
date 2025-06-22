@@ -75,3 +75,29 @@ class PlayerExplosion:
         # Draw particles
         for particle in self.particles:
             particle.draw(screen)
+
+class AsteroidExplosion:
+    def __init__(self, x, y, radius):
+        self.position = pygame.Vector2(x, y)
+        self.lifetime = 0.8
+        self.max_lifetime = self.lifetime
+        self.particles = pygame.sprite.Group()
+        
+        # Create explosion particles based on asteroid size
+        particle_count = max(5, min(15, int(radius / 3)))
+        for _ in range(particle_count):
+            particle = Particle(x, y)
+            # Scale particle speed based on asteroid size
+            speed_multiplier = min(2.0, radius / 20)
+            particle.velocity *= speed_multiplier
+            self.particles.add(particle)
+    
+    def update(self, dt):
+        self.lifetime -= dt
+        self.particles.update(dt)
+        return self.lifetime > 0
+    
+    def draw(self, screen):
+        # Draw particles
+        for particle in self.particles:
+            particle.draw(screen)
