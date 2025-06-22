@@ -249,9 +249,11 @@ class PlayingState(GameState):
 class GameOverState(GameState):
     """Game over state"""
     
-    def __init__(self, state_machine, game_objects):
+    def __init__(self, state_machine, game_objects, font, title_font):
         super().__init__(state_machine)
         self.game_objects = game_objects
+        self.font = font
+        self.title_font = title_font
     
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -297,19 +299,24 @@ class GameOverState(GameState):
             animation.draw(screen)
         
         # Draw game over screen
-        game_over_text = self.game_objects['font'].render("GAME OVER", True, "white")
-        text_rect = game_over_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 40))
+        game_over_text = self.title_font.render("GAME OVER", True, "white")
+        text_rect = game_over_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 80))
         screen.blit(game_over_text, text_rect)
         
         # Draw final score
-        final_score_text = self.game_objects['font'].render(f"Final Score: {self.game_objects['score']:06d}", True, "white")
-        score_rect = final_score_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2))
+        final_score_text = self.font.render(f"Final Score: {self.game_objects['score']:06d}", True, "white")
+        score_rect = final_score_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - 20))
         screen.blit(final_score_text, score_rect)
         
-        # Draw options
-        retry_text = self.game_objects['font'].render("Press R to Retry or Q to Quit", True, "white")
-        retry_rect = retry_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 40))
+        # Draw retry option
+        retry_text = self.font.render("Press R to Retry", True, "white")
+        retry_rect = retry_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 20))
         screen.blit(retry_text, retry_rect)
+        
+        # Draw quit option
+        quit_text = self.font.render("Press Q to Quit", True, "white")
+        quit_rect = quit_text.get_rect(center=(SCREEN_WIDTH/2, SCREEN_HEIGHT/2 + 60))
+        screen.blit(quit_text, quit_rect)
 
 
 class GameStateMachine:

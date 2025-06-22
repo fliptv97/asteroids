@@ -111,7 +111,7 @@ def main():
   state_machine = GameStateMachine()
   state_machine.add_state('start', StartState(state_machine, font, title_font))
   state_machine.add_state('playing', PlayingState(state_machine, game_objects))
-  state_machine.add_state('game_over', GameOverState(state_machine, game_objects))
+  state_machine.add_state('game_over', GameOverState(state_machine, game_objects, font, title_font))
   
   # Start with the start state
   state_machine.change_state('start')
