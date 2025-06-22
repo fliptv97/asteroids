@@ -11,6 +11,7 @@ class Player(CircleShape):
         self.rotation = 0
         self.rotation_velocity = 0
         self.shooting_limiter = 0
+        self.spawn_protection = 0.5  # Prevent shooting for 0.5 seconds after spawn
 
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
@@ -26,6 +27,7 @@ class Player(CircleShape):
 
     def update(self, dt):
         self.shooting_limiter -= dt
+        self.spawn_protection -= dt
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_a]:
@@ -67,7 +69,7 @@ class Player(CircleShape):
             self.velocity = self.velocity.normalize() * PLAYER_MAX_SPEED
 
     def shoot(self, dt):
-        if self.shooting_limiter > 0:
+        if self.shooting_limiter > 0 or self.spawn_protection > 0:
             return
 
         self.shooting_limiter = PLAYER_SHOOT_COOLDOWN
