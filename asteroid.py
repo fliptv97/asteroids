@@ -37,9 +37,16 @@ class Asteroid(CircleShape):
         self.wrap_screen()
 
     def split(self):
+        is_smallest = self.radius == ASTEROID_MIN_RADIUS
+        position = self.position.copy()  # Save position before killing
+        
         self.kill()
 
-        if self.radius == ASTEROID_MIN_RADIUS:
+        # Spawn shield power-up with 10% chance when smallest asteroid is destroyed
+        if is_smallest:
+            if random.random() < 0.1:  # 10% chance
+                from powerup import ShieldPowerUp
+                power_up = ShieldPowerUp(position.x, position.y)
             return
 
         new_radius = self.radius - ASTEROID_MIN_RADIUS

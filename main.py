@@ -9,6 +9,7 @@ from asteroidfield import AsteroidField
 from shot import Shot
 from explosion import PlayerExplosion, AsteroidExplosion
 from gamestate import GameStateMachine, StartState, PlayingState, GameOverState
+from powerup import PowerUp, ShieldPowerUp
 
 
 def main():
@@ -44,11 +45,13 @@ def main():
   drawable = pygame.sprite.Group()
   asteroids = pygame.sprite.Group()
   shots = pygame.sprite.Group()
+  powerups = pygame.sprite.Group()
 
   Player.containers = (updatable, drawable)
   Asteroid.containers = (asteroids, updatable, drawable)
   AsteroidField.containers = updatable
   Shot.containers = (shots, updatable, drawable)
+  PowerUp.containers = (powerups, updatable, drawable)
 
   clock = pygame.time.Clock()
   dt = 0
@@ -88,6 +91,7 @@ def main():
     'drawable': drawable,
     'asteroids': asteroids,
     'shots': shots,
+    'powerups': powerups,
     'lives': PLAYER_LIVES,
     'respawn_timer': 0,
     'player': None,

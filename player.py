@@ -12,6 +12,10 @@ class Player(CircleShape):
         self.rotation_velocity = 0
         self.shooting_limiter = 0
         self.spawn_protection = 0.5  # Prevent shooting for 0.5 seconds after spawn
+        
+        # Power-up system
+        self.active_powerups = {}
+        self.shield = None
 
     def triangle(self):
         forward = pygame.Vector2(0, 1).rotate(self.rotation)
@@ -24,10 +28,21 @@ class Player(CircleShape):
 
     def draw(self, screen):
         pygame.draw.polygon(screen, "white", self.triangle(), 2)
+        
+        # Draw shield if active
+        if self.shield and self.shield.active:
+            self.shield.draw(screen, self.position, self.radius)
 
     def update(self, dt):
         self.shooting_limiter -= dt
         self.spawn_protection -= dt
+        
+        # Update shield
+        if self.shield:
+            self.shield.update(dt)
+            if not self.shield.active:
+                self.shield = None
+        
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_a]:
@@ -75,3 +90,26 @@ class Player(CircleShape):
         self.shooting_limiter = PLAYER_SHOOT_COOLDOWN
         shot = Shot(self.position.x, self.position.y)
         shot.velocity = pygame.Vector2(0, 1).rotate(self.rotation) * PLAYER_SHOOT_SPEED
+    
+    def add_shield(self):
+        """Add a shield to the player. Returns True if successfully added, False if already has one."""
+        if self.shield and self.shield.active:
+            return False  # Already has an active shield
+        
+        from powerup import PlayerShield
+        self.shield = PlayerShield()
+        return True
+    
+    def has_shield(self):
+        """Check if player currently has an active shield"""
+        return self.shield and self.shield.active
+    
+    def take_damage(self):
+        """Handle taking damage. Returns True if player was destroyed, False if damage was absorbed."""
+        if self.shield and self.shield.active:
+            # Shield absorbs the damage
+            self.shield.take_hit()
+            return False
+        else:
+            # Player takes damage and is destroyed
+            return True

@@ -93,6 +93,8 @@ class PlayingState(GameState):
             asteroid.kill()
         for shot in self.game_objects['shots']:
             shot.kill()
+        for powerup in self.game_objects['powerups']:
+            powerup.kill()
         
         # Create asteroid field
         self.game_objects['AsteroidField']()
@@ -119,19 +121,42 @@ class PlayingState(GameState):
                 if explosion.lifetime <= 0:
                     self.game_objects['asteroid_explosions'].remove(explosion)
             
-            # Collision detection - player vs asteroids
+            # Collision detection - player vs asteroids (including shield)
             if (self.game_objects['player'] and 
                 self.game_objects['respawn_timer'] <= 0 and 
                 not self.game_objects['explosion']):
+                
+                player = self.game_objects['player']
+                
                 for asteroid in self.game_objects['asteroids']:
-                    if asteroid.colliding_with(self.game_objects['player']):
+                    hit_shield = False
+                    
+                    # Check shield collision first (if player has active shield)
+                    if player.has_shield():
+                        shield_radius = player.radius + 15  # Same as shield visual radius
+                        distance = (asteroid.position - player.position).length()
+                        if distance <= (asteroid.radius + shield_radius):
+                            # Shield was hit
+                            hit_shield = True
+                            player.take_damage()  # This will disable the shield
+                            
+                            # Asteroid disappears completely (no splitting)
+                            self.game_objects['asteroid_explosions'].append(
+                                self.game_objects['create_explosion'](asteroid.position)
+                            )
+                            asteroid.kill()  # Just kill, don't split
+                            break
+                    
+                    # Check player collision only if shield wasn't hit
+                    if not hit_shield and asteroid.colliding_with(player):
+                        # Player takes direct damage (no shield protection)
                         from explosion import PlayerExplosion
                         self.game_objects['explosion'] = PlayerExplosion(
-                            self.game_objects['player'].position.x, 
-                            self.game_objects['player'].position.y, 
-                            self.game_objects['player'].rotation
+                            player.position.x, 
+                            player.position.y, 
+                            player.rotation
                         )
-                        self.game_objects['player'].kill()
+                        player.kill()
                         self.game_objects['player'] = None
                         self.game_objects['lives'] -= 1
                         self.game_objects['respawn_timer'] = RESPAWN_TIME
@@ -157,6 +182,16 @@ class PlayingState(GameState):
                         asteroid.split()
                         shot.kill()
                         break
+            
+            # Collision detection - player vs power-ups
+            if self.game_objects['player']:
+                for powerup in list(self.game_objects['powerups']):  # Convert to list to avoid modification during iteration
+                    if powerup.colliding_with(self.game_objects['player']):
+                        # Try to apply power-up to player
+                        if powerup.apply_to_player(self.game_objects['player']):
+                            # Power-up was successfully applied
+                            powerup.kill()
+                        # If power-up was ignored (e.g., player already has shield), leave it for potential future pickup
             
             # Handle explosion
             if self.game_objects['explosion']:
